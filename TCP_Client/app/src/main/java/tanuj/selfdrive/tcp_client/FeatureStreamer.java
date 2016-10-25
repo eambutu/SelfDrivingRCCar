@@ -34,16 +34,16 @@ class FeatureStreamer {
         }
     }
 
-    void sendFeatures(int width, int height, byte[] send, float[] accelerometerFeatures) {
+    void sendFeatures(int width, int height, byte[] send) {
         try {
             if (dos != null) {
                 dos.writeInt(width);
                 dos.writeInt(height);
-                dos.writeInt(accelerometerFeatures.length);
+                //dos.writeInt(accelerometerFeatures.length);
                 dos.write(send, 0, send.length);
-                for (int i = 0; i < accelerometerFeatures.length; i++) {
+                /*for (int i = 0; i < accelerometerFeatures.length; i++) {
                     dos.writeFloat(accelerometerFeatures[i]);
-                }
+                }*/
                 dos.flush();
             }
         } catch (IOException e) {

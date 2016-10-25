@@ -304,26 +304,27 @@ class FeatureStreamingCameraPreview extends ViewGroup implements SurfaceHolder.C
     public void onPreviewFrame(byte[] data, Camera camera) {
 
         if (data.length >= mPreviewSize.width * mPreviewSize.height) {
-           /* decodeYUV420SPGrayscale(pixels, data, mPreviewSize.width,
-                    mPreviewSize.height);*/
+           truncateBytes(pixels, data, mPreviewSize.width,
+                    mPreviewSize.height);
             synchronized (this) {
-                fs.sendFeatures(mPreviewSize.width, mPreviewSize.height, data, accelerometerFeatures);
+                fs.sendFeatures(mPreviewSize.width, mPreviewSize.height, pixels);
             }
         }
 
     }
 
-    static public void decodeYUV420SPGrayscale(byte[] rgb, byte[] yuv420sp,
+    static public void truncateBytes(byte[] rgb, byte[] yuv420sp,
                                                int width, int height) {
         final int frameSize = width * height;
 
         for (int pix = 0; pix < frameSize; pix++) {
-            int pixVal = (0xff & ((int) yuv420sp[pix])) - 16;
+            /*int pixVal = (0xff & ((int) yuv420sp[pix])) - 16;
             if (pixVal < 0)
                 pixVal = 0;
             if (pixVal > 255)
                 pixVal = 255;
-            rgb[pix] = (byte) pixVal;
+            rgb[pix] = (byte) pixVal;*/
+            rgb[pix] = yuv420sp[pix];
         }
     }
 
