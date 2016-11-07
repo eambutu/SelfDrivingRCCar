@@ -1,5 +1,6 @@
 import socket
 from time import sleep
+import sys
 
 import pygame
 from pygame.locals import *
@@ -7,7 +8,7 @@ from driver import Driver
 from app import App
 
 class CollectApp(App):
-    def __init__(self):
+    def __init__(self, tcp_address):
         # Pygame stuff
         self._running = True
         self._display_surf = None
@@ -20,7 +21,7 @@ class CollectApp(App):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Bind socket to a port
-        server_address = ('localhost', 6666)
+        server_address = (tcp_address, 6666)
         print 'Staring up on %s port %s' % server_address
         self.sock.bind(server_address)
 
@@ -38,10 +39,10 @@ class CollectApp(App):
 
     # Recvall(connection, x) receives anywhere from 1 to x bytes, so we need
     # to make sure we're getting exactly x bytes.
-    def recv_exact(conn, length):
+    def recv_exact(self, conn, length):
         buffer = b''
         while len(buffer) < length:
-            data = conn.recv(length - len(buf))
+            data = conn.recv(length - len(buffer))
             if not data:
                 return data
             buffer += data
@@ -82,10 +83,10 @@ class CollectApp(App):
                 pygame.event.pump()
 
                 # Get image
-                length = recv_exact(connection, 1000) #TODO: replace this
+                length = self.recv_exact(connection, 1000) #TODO: replace this
                 if not length:
                     print 'Invalid length from TCP client'
-                data = recv_exact(connection, int(length))
+                data = self.recv_exact(connection, int(length))
                 if not data:
                     print 'Invalid data from TCP client'
 
@@ -101,5 +102,11 @@ class CollectApp(App):
         self.on_cleanup()
 
 if __name__ == '__main__':
-    runApp = CollectApp()
-    runApp.on_execute()
+    if len(sys.argv) == 1:
+        print 'Error: insufficient arguments'
+        print 'Usage: python collect_data.py [arg1]'
+        print 'Where argument 1 is the IP address of the TCP server'
+    else:
+        server_address = sys.argv[1]
+        runApp = CollectApp(server_address)
+        runApp.on_execute()
