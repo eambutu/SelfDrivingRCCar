@@ -1,11 +1,12 @@
 import socket
 import sys
+import struct
 
 # Create TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Bind socket to a port
-server_address = ('localhost', 6666)
+server_address = ('128.237.172.11', 6666)
 print 'Starting up on %s port %s' % server_address
 sock.bind(server_address)
 
@@ -22,7 +23,8 @@ while True:
 
         # Receieve the data in small chunks and retransmit it
         while True:
-            data = connection.recv(16)
+            data = connection.recv(8)
+            print struct.unpack("!q", data)[0]
             print 'Received %s' % data
             if data:
                 print 'Sending data back to client'
