@@ -6,7 +6,7 @@ import struct
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Bind socket to a port
-server_address = ('128.237.172.11', 6666)
+server_address = ('128.237.139.147', 6666)
 print 'Starting up on %s port %s' % server_address
 sock.bind(server_address)
 
@@ -20,18 +20,41 @@ while True:
 
     try:
         print 'Connection from ', client_address
+        
+        with open('./sample_input.txt', 'w') as fout:
+            width = -1
+            height = -1
+            counter = 0
+            toprint = ''
 
-        # Receieve the data in small chunks and retransmit it
-        while True:
-            data = connection.recv(8)
-            print struct.unpack("!q", data)[0]
-            print 'Received %s' % data
-            if data:
-                print 'Sending data back to client'
-                connection.sendall(data)
-            else:
-                print 'No more data from', client_address
-                break
+            # Receieve the data in small chunks and retransmit it
+            while True:
+                if not counter == 0 and counter > width * height:
+                    break
+                data = connection.recv(4)
+                curint = struct.unpack("!i", data)[0]
+                print 'Received %s' % data
+
+                if width == -1:
+                    width = curint
+                    fout.write(str(width))
+                elif height == -1:
+                    height = curint
+                    fout.write(' ' + str(height))
+                elif counter % width == 0:
+                    fout.write(toprint + '\n')
+                    toprint = str(curint)
+                    counter += 1
+                else:
+                    toprint += ' ' + str(curint)
+                    counter += 1
+
+                if data:
+                    print 'Sending data back to client'
+                    connection.sendall(data)
+                else:
+                    print 'No more data from', client_address
+                    break
     
     finally:
         # Clean up connection
