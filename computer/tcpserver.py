@@ -6,7 +6,7 @@ import struct
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Bind socket to a port
-server_address = ('128.237.139.147', 6666)
+server_address = ('128.237.143.156', 6666)
 print 'Starting up on %s port %s' % server_address
 sock.bind(server_address)
 
@@ -31,9 +31,13 @@ while True:
             while True:
                 if not counter == 0 and counter > width * height:
                     break
-                data = connection.recv(4)
-                curint = struct.unpack("!i", data)[0]
-                print 'Received %s' % data
+
+                if width == -1 or height == -1:
+                    data = connection.recv(4)
+                    curint = struct.unpack("!i", data)[0]
+                else:
+                    data = connection.recv(1)
+                    curint = int(data.encode('hex'), 16)
 
                 if width == -1:
                     width = curint
