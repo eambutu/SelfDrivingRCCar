@@ -1,7 +1,9 @@
 import socket
 from time import sleep
 import sys
+import struct
 
+import numpy as np
 import pygame
 from pygame.locals import *
 from driver import Driver
@@ -12,7 +14,6 @@ class CollectApp(App):
         # Pygame stuff
         self._running = True
         self._display_surf = None
-        self.size = self.width, self.height = 640, 400
 
         # Initialize driver
         self.driver = Driver()
@@ -27,11 +28,7 @@ class CollectApp(App):
 
     def on_init(self):
         pygame.init()
-
-        # Starts window with dimensions, and attempts to use hardware
-        # acceleration. 
-        self._display_surf = pygame.display.set_mode(self.size, 
-                             pygame.HWSURFACE | pygame.DOUBLEBUF)
+         
         self._running = True
 
         # Listen for incoming TCP connections
@@ -57,6 +54,7 @@ class CollectApp(App):
  
         try: 
             print 'Connection from ', client_address
+            
             while(self._running):
                 # 4 bit integer that represents which keys were pressed
                 keys_pressed = 0
@@ -66,34 +64,49 @@ class CollectApp(App):
                     self.on_key_press(pygame.K_ESCAPE)
                 if keys[pygame.K_UP]:
                     self.on_key_press(pygame.K_UP)
-                    key_pressed += 1
+                    keys_pressed += 1
                 if keys[pygame.K_RIGHT]:
                     self.on_key_press(pygame.K_RIGHT)
-                    key_pressed += 2
+                    keys_pressed += 2
                 if keys[pygame.K_DOWN]:
                     self.on_key_press(pygame.K_DOWN)
-                    key_pressed += 4
+                    keys_pressed += 4
                 if keys[pygame.K_LEFT]:
                     self.on_key_press(pygame.K_LEFT)
-                    key_pressed += 8
+                    keys_pressed += 8
                 self.on_loop()
                 self.on_render()
 
                 # Clear event queue to process key pressed
                 pygame.event.pump()
 
-                # Get image
-                length = self.recv_exact(connection, 1000) #TODO: replace this
-                if not length:
-                    print 'Invalid length from TCP client'
-                data = self.recv_exact(connection, int(length))
-                if not data:
-                    print 'Invalid data from TCP client'
+                # Input from the TCP connection: two integers (4 bytes)
+                # that represent width, height, in that order. Then, we have 
+                # width*height bytes that represent the pixel values at those
+                # positions. 
+                width = struct.unpack("!i", self.recv_exact(connection,4))[0]
+                height = struct.unpack("!i", self.recv_exact(connection,4))[0]
+                pixels = np.zeros((height, width, 3))
+
+                if not self._display_surf:
+                    # Starts window with dimensions, and attempts to use hardware
+                    # acceleration.
+                    self._display_surf =  pygame.display.set_mode((height, width), 
+                                          pygame.HWSURFACE | pygame.DOUBLEBUF)
+
+                for idx1 in range(0, height):
+                    for idx2 in range(0, width):
+                        data = self.recv_exact(connection,1)
+                        pixels[idx1, idx2, 0] = int(data.encode('hex'), 16)
+
+                pixels[:,:,0] = np.flipud(pixels[:,:,0])
+                pixels[:,:,1] = pixels[:,:,0]
+                pixels[:,:,2] = pixels[:,:,0]
+
+                pygame.surfarray.blit_array(self._display_surf,pixels)
+                pygame.display.update()
 
                 # TODO: save image along with keys_pressed
-
-                # Collect data every 0.05 seconds
-                sleep(0.05)
 
         finally:
             # Clean up connection
