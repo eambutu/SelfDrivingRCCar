@@ -10,8 +10,6 @@ class App:
     def __init__(self):
         # Pygame stuff
         self._running = True
-        self._display_surf = None
-        self.size = self.width, self.height = 640, 400
 
         # Initialize driver
         self.driver = Driver()
@@ -19,10 +17,6 @@ class App:
     def on_init(self):
         pygame.init()
 
-        # Starts window with dimensions, and attempts to use hardware
-        # acceleration. 
-        self._display_surf = pygame.display.set_mode(self.size, 
-                             pygame.HWSURFACE | pygame.DOUBLEBUF)
         self._running = True
 
     def on_key_press(self, key):
@@ -71,7 +65,6 @@ class App:
             self.on_render()
 
             pygame.event.pump()
-            sleep(0.05)
         self.on_cleanup()
 
 if __name__ == '__main__':
