@@ -19,7 +19,7 @@ class App:
     def on_init(self):
         pygame.init()
 
-        self._display_surf = pygame.display.set_mod(self.size,
+        self._display_surf = pygame.display.set_mode(self.size,
                              pygame.HWSURFACE | pygame.DOUBLEBUF)
 
         self._running = True
