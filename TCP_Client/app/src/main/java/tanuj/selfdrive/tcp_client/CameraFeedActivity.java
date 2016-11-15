@@ -31,6 +31,7 @@ public class CameraFeedActivity extends AppCompatActivity {
     Camera mCamera;
     int numberOfCameras;
     int cameraCurrentlyLocked;
+    long lastTimeSent = System.currentTimeMillis();
 
     // The first rear facing camera
     int defaultCameraId;
@@ -307,7 +308,10 @@ class FeatureStreamingCameraPreview extends ViewGroup implements SurfaceHolder.C
            truncateBytes(pixels, data, mPreviewSize.width,
                     mPreviewSize.height);
             synchronized (this) {
-                fs.sendFeatures(mPreviewSize.width, mPreviewSize.height, pixels);
+                if (System.currentTimeMillis - lastTimeSent > 50000) {
+                    fs.sendFeatures(mPreviewSize.width, mPreviewSize.height, pixels);
+                    lastTimeSent = System.currentTimeMillis;
+                }
             }
         }
 
