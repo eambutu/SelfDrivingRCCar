@@ -63,17 +63,14 @@ class CollectApp(App):
                 if keys[pygame.K_ESCAPE]:
                     self.on_key_press(pygame.K_ESCAPE)
                 if keys[pygame.K_UP]:
-                    self.on_key_press(pygame.K_UP)
-                    keys_pressed += 1
+                    keys_pressed += 4
                 if keys[pygame.K_RIGHT]:
-                    self.on_key_press(pygame.K_RIGHT)
                     keys_pressed += 2
                 if keys[pygame.K_DOWN]:
-                    self.on_key_press(pygame.K_DOWN)
-                    keys_pressed += 4
-                if keys[pygame.K_LEFT]:
-                    self.on_key_press(pygame.K_LEFT)
                     keys_pressed += 8
+                if keys[pygame.K_LEFT]:
+                    keys_pressed += 1
+                self.driver.write(keys_pressed)
                 self.on_loop()
                 self.on_render()
 

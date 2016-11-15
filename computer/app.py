@@ -11,11 +11,17 @@ class App:
         # Pygame stuff
         self._running = True
 
+        self._display_surf = None
+        self.size = self.width, self.height = 640, 400
+
         # Initialize driver
         self.driver = Driver()
 
     def on_init(self):
         pygame.init()
+
+        self._display_surf = pygame.display.set_mode(self.size,
+                             pygame.HWSURFACE | pygame.DOUBLEBUF)
 
         self._running = True
 
