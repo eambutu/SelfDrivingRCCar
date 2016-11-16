@@ -11,7 +11,7 @@
 
     <application android:label="@string/app_name">
         <activity android:name="tanuj.selfdrive.tcp_client.CameraFeedActivity"
-            android:label="NNRCCar">
+            android:label="NNRCCar" android:theme="@style/Theme.AppCompat.DayNight">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

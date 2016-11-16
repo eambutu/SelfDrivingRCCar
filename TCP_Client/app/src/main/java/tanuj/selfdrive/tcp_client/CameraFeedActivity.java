@@ -2,16 +2,22 @@ package tanuj.selfdrive.tcp_client;
 
 //Code modified from David Singleton
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,11 +37,11 @@ public class CameraFeedActivity extends AppCompatActivity {
     Camera mCamera;
     int numberOfCameras;
     int cameraCurrentlyLocked;
-    long lastTimeSent = System.currentTimeMillis();
 
     // The first rear facing camera
     int defaultCameraId;
 
+    public static final int MY_PERMISSIONS_REQUEST_CAMERA = 42;
     private static final String PREFS_NAME = "tanuj.selfdrive.tcp_client";
 
     private FeatureStreamer fs = new FeatureStreamer();
@@ -80,6 +86,12 @@ public class CameraFeedActivity extends AppCompatActivity {
             }
         });
         addressAlert.show();
+
+        // Get camera permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+
+        }
     }
 
     class ConnectTask extends AsyncTask<String,Void,Void> {
@@ -109,6 +121,13 @@ public class CameraFeedActivity extends AppCompatActivity {
         prefs.commit();
     }
 
+    private void connectToCamera() {
+        mCamera = Camera.open();
+        cameraCurrentlyLocked = defaultCameraId;
+        mPreview.setCamera(mCamera);
+
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -117,9 +136,16 @@ public class CameraFeedActivity extends AppCompatActivity {
                 sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
                 SensorManager.SENSOR_DELAY_FASTEST);*/
 
-        mCamera = Camera.open();
-        cameraCurrentlyLocked = defaultCameraId;
-        mPreview.setCamera(mCamera);
+        // Get camera permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            connectToCamera();
+        }
+        else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA},
+                    MY_PERMISSIONS_REQUEST_CAMERA);
+        }
     }
 
     @Override
@@ -131,6 +157,21 @@ public class CameraFeedActivity extends AppCompatActivity {
             mPreview.setCamera(null);
             mCamera.release();
             mCamera = null;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        if (requestCode == MY_PERMISSIONS_REQUEST_CAMERA) {
+            if (grantResults.length > 0 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                connectToCamera();
+            }
+            else {
+                setResult(Activity.RESULT_CANCELED);
+                finish();
+            }
         }
     }
 
@@ -165,6 +206,8 @@ class FeatureStreamingCameraPreview extends ViewGroup implements SurfaceHolder.C
     Camera.Size mPreviewSize;
     List<Camera.Size> mSupportedPreviewSizes;
     Camera mCamera;
+
+    long lastTimeSent = System.currentTimeMillis();
 
     private byte[] pixels = null;
     private float[] accelerometerFeatures = new float[3];
@@ -303,14 +346,16 @@ class FeatureStreamingCameraPreview extends ViewGroup implements SurfaceHolder.C
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
+        Log.d("onPreviewFrame", "here");
 
         if (data.length >= mPreviewSize.width * mPreviewSize.height) {
            truncateBytes(pixels, data, mPreviewSize.width,
                     mPreviewSize.height);
             synchronized (this) {
-                if (System.currentTimeMillis - lastTimeSent > 50000) {
+                if (System.currentTimeMillis() - lastTimeSent > 50) {
+                    Log.d("sendFeatures", "here");
                     fs.sendFeatures(mPreviewSize.width, mPreviewSize.height, pixels);
-                    lastTimeSent = System.currentTimeMillis;
+                    lastTimeSent = System.currentTimeMillis();
                 }
             }
         }
