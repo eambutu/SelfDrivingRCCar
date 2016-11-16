@@ -10,13 +10,16 @@ from driver import Driver
 from app import App
 
 class CollectApp(App):
-    def __init__(self, tcp_address):
+    def __init__(self, tcp_address, write_file):
         # Pygame stuff
         self._running = True
         self._display_surf = None
 
         # Initialize driver
         self.driver = Driver()
+
+        # Directory to write data
+        self.data_dir = './data/' + write_file + '.txt'
 
         # Create TCP/IP socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -55,55 +58,60 @@ class CollectApp(App):
         try: 
             print 'Connection from ', client_address
             
-            while(self._running):
-                # 4 bit integer that represents which keys were pressed
-                keys_pressed = 0
+            with open(self.data_dir, 'a') as fout:
+                while(self._running):
+                    # 4 bit integer that represents which keys were pressed
+                    keys_pressed = 0
 
-                keys = pygame.key.get_pressed()
-                if keys[pygame.K_ESCAPE]:
-                    self.on_key_press(pygame.K_ESCAPE)
-                if keys[pygame.K_UP]:
-                    keys_pressed += 4
-                if keys[pygame.K_RIGHT]:
-                    keys_pressed += 2
-                if keys[pygame.K_DOWN]:
-                    keys_pressed += 8
-                if keys[pygame.K_LEFT]:
-                    keys_pressed += 1
-                self.driver.write(keys_pressed)
-                self.on_loop()
-                self.on_render()
+                    keys = pygame.key.get_pressed()
+                    if keys[pygame.K_ESCAPE]:
+                        self.on_key_press(pygame.K_ESCAPE)
+                    if keys[pygame.K_UP]:
+                        keys_pressed += 4
+                    if keys[pygame.K_RIGHT]:
+                        keys_pressed += 2
+                    if keys[pygame.K_DOWN]:
+                        keys_pressed += 8
+                    if keys[pygame.K_LEFT]:
+                        keys_pressed += 1
+                    self.driver.write(keys_pressed)
+                    self.on_loop()
+                    self.on_render()
 
-                # Clear event queue to process key pressed
-                pygame.event.pump()
+                    # Clear event queue to process key pressed
+                    pygame.event.pump()
 
-                # Input from the TCP connection: two integers (4 bytes)
-                # that represent width, height, in that order. Then, we have 
-                # width*height bytes that represent the pixel values at those
-                # positions. 
-                width = struct.unpack("!i", self.recv_exact(connection,4))[0]
-                height = struct.unpack("!i", self.recv_exact(connection,4))[0]
-                pixels = np.zeros((height, width, 3))
+                    # Input from the TCP connection: two integers (4 bytes)
+                    # that represent width, height, in that order. Then, we have 
+                    # width*height bytes that represent the pixel values at those
+                    # positions. 
+                    width = struct.unpack("!i", self.recv_exact(connection,4))[0]
+                    height = struct.unpack("!i", self.recv_exact(connection,4))[0]
+                    pixels = np.zeros((height, width, 3))
 
-                if not self._display_surf:
-                    # Starts window with dimensions, and attempts to use hardware
-                    # acceleration.
-                    self._display_surf =  pygame.display.set_mode((height, width), 
-                                          pygame.HWSURFACE | pygame.DOUBLEBUF)
+                    if not self._display_surf:
+                        # Starts window with dimensions, and attempts to use hardware
+                        # acceleration.
+                        self._display_surf =  pygame.display.set_mode((height, width), 
+                                              pygame.HWSURFACE | pygame.DOUBLEBUF)
 
-                for idx1 in range(0, height):
-                    for idx2 in range(0, width):
-                        data = self.recv_exact(connection,1)
-                        pixels[idx1, idx2, 0] = int(data.encode('hex'), 16)
+                    for idx1 in range(0, height):
+                        for idx2 in range(0, width):
+                            data = self.recv_exact(connection,1)
+                            pixels[idx1, idx2, 0] = int(data.encode('hex'), 16)
 
-                pixels[:,:,0] = np.flipud(pixels[:,:,0])
-                pixels[:,:,1] = pixels[:,:,0]
-                pixels[:,:,2] = pixels[:,:,0]
+                    pixels[:,:,0] = np.flipud(pixels[:,:,0])
+                    pixels[:,:,1] = pixels[:,:,0]
+                    pixels[:,:,2] = pixels[:,:,0]
 
-                pygame.surfarray.blit_array(self._display_surf,pixels)
-                pygame.display.update()
+                    pygame.surfarray.blit_array(self._display_surf,pixels)
+                    pygame.display.update()
 
-                # TODO: save image along with keys_pressed
+                    #Save image along with keys_pressed
+                    if not keys_pressed == 0:
+                        tosave = pixels[:,:,0].flatten()
+                        tosave = np.append(keys_pressed, tosave)
+                        np.savetxt(fout, tosave[None], fmt='%d', delimiter=' ')
 
         finally:
             # Clean up connection
@@ -112,11 +120,13 @@ class CollectApp(App):
         self.on_cleanup()
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
+    if len(sys.argv) < 3:
         print 'Error: insufficient arguments'
-        print 'Usage: python collect_data.py [arg1]'
+        print 'Usage: python collect_data.py [arg1] [arg2]'
         print 'Where argument 1 is the IP address of the TCP server'
+        print 'And argument 2 is the name of the file to write data'
     else:
         server_address = sys.argv[1]
-        runApp = CollectApp(server_address)
+        write_file = sys.argv[2]
+        runApp = CollectApp(server_address, write_file)
         runApp.on_execute()
