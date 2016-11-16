@@ -1,12 +1,17 @@
 import struct
 import serial
+from sys import platform
 
 class Driver(object):
     def __init__(self):
         # Initialize connection to serial port
         # Blah blah parameters
-        SERIAL_PORT = '/dev/cu.usbmodem1421'
-        BAUDRATE = 9600
+        if platform == 'linux' or platform == 'linux2':
+            SERIAL_PORT = '/dev/tty0'
+            BAUDRATE = 19200
+        elif platform == 'darwin':
+            SERIAL_PORT = '/dev/cu.usbmodem1421'
+            BAUDRATE = 9600
         self.ser = serial.Serial(SERIAL_PORT, BAUDRATE)
 
     def up(self):
