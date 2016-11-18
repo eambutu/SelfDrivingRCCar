@@ -7,8 +7,8 @@ class Driver(object):
         # Initialize connection to serial port
         # Blah blah parameters
         if platform == 'linux' or platform == 'linux2':
-            SERIAL_PORT = '/dev/tty0'
-            BAUDRATE = 19200
+            SERIAL_PORT = '/dev/ttyACM0'
+            BAUDRATE = 9600
         elif platform == 'darwin':
             SERIAL_PORT = '/dev/cu.usbmodem1421'
             BAUDRATE = 9600
@@ -33,3 +33,4 @@ class Driver(object):
     def write(self, keys):
         print 'Writing to serial:' + str(keys)
         self.ser.write(struct.pack('>B',keys))
+        self.ser.flushInput()
