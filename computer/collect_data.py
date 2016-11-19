@@ -107,10 +107,10 @@ class CollectApp(App):
                     pygame.surfarray.blit_array(self._display_surf,pixels)
                     pygame.display.update()
 
-                    #Save image along with keys_pressed
+                    #Save image along with keys_pressed, and width and height
                     if not keys_pressed == 0:
                         tosave = pixels[:,:,0].flatten()
-                        tosave = np.append(keys_pressed, tosave)
+                        tosave = np.append([keys_pressed, width, height], tosave)
                         np.savetxt(fout, tosave[None], fmt='%d', delimiter=' ')
 
         finally:
