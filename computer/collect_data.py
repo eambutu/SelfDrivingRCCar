@@ -87,29 +87,31 @@ class CollectApp(App):
                     # positions. 
                     width = struct.unpack("!i", self.recv_exact(connection,4))[0]
                     height = struct.unpack("!i", self.recv_exact(connection,4))[0]
-                    pixels = np.zeros((height, width, 3))
+                    pixels = np.zeros((height, width))
+                    pixels_disp = np.zeros((width, height, 3))
 
                     if not self._display_surf:
                         # Starts window with dimensions, and attempts to use hardware
                         # acceleration.
-                        self._display_surf =  pygame.display.set_mode((height, width), 
+                        self._display_surf =  pygame.display.set_mode((width, height), 
                                               pygame.HWSURFACE | pygame.DOUBLEBUF)
 
                     for idx1 in range(0, height):
                         for idx2 in range(0, width):
                             data = self.recv_exact(connection,1)
-                            pixels[idx1, idx2, 0] = int(data.encode('hex'), 16)
+                            pixels[idx1, idx2] = int(data.encode('hex'), 16)
 
-                    pixels[:,:,0] = np.flipud(pixels[:,:,0])
-                    pixels[:,:,1] = pixels[:,:,0]
-                    pixels[:,:,2] = pixels[:,:,0]
+                    pixels = np.flipud(pixels)
+                    pixels_disp[:,:,0] = np.rot90(pixels)
+                    pixels_disp[:,:,1] = pixels_disp[:,:,0]
+                    pixels_disp[:,:,2] = pixels_disp[:,:,0]
 
-                    pygame.surfarray.blit_array(self._display_surf,pixels)
+                    pygame.surfarray.blit_array(self._display_surf,pixels_disp)
                     pygame.display.update()
 
                     #Save image along with keys_pressed, and width and height
                     if not keys_pressed == 0:
-                        tosave = pixels[:,:,0].flatten()
+                        tosave = pixels.flatten()
                         tosave = np.append([keys_pressed, width, height], tosave)
                         np.savetxt(fout, tosave[None], fmt='%d', delimiter=' ')
 
