@@ -14,9 +14,9 @@ void setup() {
     Serial.begin(9600);
 }
 
-void loop{
+void loop(){
     if (Serial.available() > 0) {
-        incomingByte = Serial.read(); 
+        int incomingByte = Serial.read(); 
         digitalWrite(left, LOW);
        digitalWrite(right, LOW);
        digitalWrite(forward, LOW);
