@@ -9,6 +9,7 @@ class App:
     def __init__(self):
         # Pygame stuff
         self._running = True
+        self.loop_length = 0.03
 
         self._display_surf = None
         self.size = self.width, self.height = 640, 400
@@ -81,6 +82,7 @@ class App:
 
             counter += 1
             print "%d %f %f" % (counter, time2-time1, time3-time2)
+            time.sleep(self.loop_length)
             # print str(time2 - time1) + " " + str(time3 - time2)
         self.on_cleanup()
 

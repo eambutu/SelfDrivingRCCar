@@ -1,5 +1,5 @@
 import socket
-from time import sleep
+import time
 import sys
 import struct
 
@@ -60,6 +60,7 @@ class CollectApp(App):
             
             with open(self.data_dir, 'a') as fout:
                 while(self._running):
+                    start_time = time.time()
                     # 4 bit integer that represents which keys were pressed
                     keys_pressed = 0
 
@@ -75,8 +76,6 @@ class CollectApp(App):
                     if keys[pygame.K_LEFT]:
                         keys_pressed += 1
                     self.driver.write(keys_pressed)
-                    self.on_loop()
-                    self.on_render()
 
                     # Clear event queue to process key pressed
                     pygame.event.pump()
@@ -114,6 +113,9 @@ class CollectApp(App):
                         tosave = pixels.flatten()
                         tosave = np.append([keys_pressed, width, height], tosave)
                         np.savetxt(fout, tosave[None], fmt='%d', delimiter=' ')
+
+                    loop_time = time.time() - start_time
+                    print 'Loop time: %f', loop_time
 
         finally:
             # Clean up connection
